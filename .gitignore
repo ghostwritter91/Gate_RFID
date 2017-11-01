@@ -1,0 +1,6 @@
+.pioenvs/
+.piolibdeps/
+.vscode/
+lib/
+*.travis.yml
+
