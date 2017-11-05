@@ -32,7 +32,7 @@
 String getPage();
 String ReadTag(String *str);
 String WriteTag(String str);
-String dump_byte_array_to_string(byte *buffer, byte bufferSize);
+static String dump_byte_array_to_string(byte *buffer, byte bufferSize);
 
 constexpr uint8_t RST_PIN = 0; // Configurable, see typical pin layout above
 constexpr uint8_t SS_PIN = 15; // Configurable, see typical pin layout above
@@ -188,37 +188,27 @@ void loop()
 	{
 	}
 }
-
-/**
-  * Helper routine to dump a byte array as hex values to Serial.
-  */
-void dump_byte_array(byte *buffer, byte bufferSize)
-{
-	for (byte i = 0; i < bufferSize; i++)
-	{
-		Serial.print(buffer[i] < 0x10 ? " 0" : " ");
-		Serial.print(buffer[i], HEX);
-	}
-}
-
+/* body { background-color: #fffff; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; } */
 String getPage()
 {
 	String page = "<html lang=en-EN>";
-	page += "<style> body { background-color: #fffff; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; } label {white-space: pre-wrap; } </style>";
+	page += "<style> label {white-space: pre-wrap; } </style>";
 	page += "<form action='/' method='POST'>";
 	/*Read*/
 	page += "READ TAG: <input type='text' name='read_txt' size='60' value='" + sReadValue + "'" + "readonly>";
-	page += "<input type='radio' name='" + RADIO_CHECK_NAME + "'" + "value='" + RADIO_READ + "'>" + "<br>";
+	page += "<input type='radio' name='" + RADIO_CHECK_NAME + "'" + "value='" + RADIO_READ + "'>" + "<br><br>";
 	/*Write*/
 	page += "WRITE TAG (max 16 chars): <input type='text' name='" + WRITE_TXT + "'>";
-	page += "<input type='radio' name='" + RADIO_CHECK_NAME + "'" + "value='" + RADIO_WRITE + "'>" + "<br>";
+	page += "<input type='radio' name='" + RADIO_CHECK_NAME + "'" + "value='" + RADIO_WRITE + "'>" + "<br><br>";
 	/*Add tag*/
 	page += "ADD TAG (max 16 chars): <input type='text' name='" + ADD_TXT + "'>";	
-	page += "<input type='radio' name='" + RADIO_CHECK_NAME + "'" + "value='" + RADIO_ADD_TAG + "'>" + "<br>";
+	page += "<input type='radio' name='" + RADIO_CHECK_NAME + "'" + "value='" + RADIO_ADD_TAG + "'>" + "<br><br>";
 	/*Clear all tags*/
-	page += "<input type='radio' name='" + RADIO_CHECK_NAME + "'" + "value='" + RADIO_CLEAR_ALL + "'>" + "CLEAR ALL" "<br>";
+	page += "<label>CLEAR ALL</label>";	
+	page += "<input type='radio' name='" + RADIO_CHECK_NAME + "'" + "value='" + RADIO_CLEAR_ALL + "'>" + "<br><br>";
 	/*Dump all*/
-	page += "<input type='radio' name='" + RADIO_CHECK_NAME + "'" + "value='" + RADIO_DUMP_ALL + "'>" + "DUMP ALL" "<br>";
+	page += "<label>DUMP ALL</label>";	
+	page += "<input type='radio' name='" + RADIO_CHECK_NAME + "'" + "value='" + RADIO_DUMP_ALL + "'>" + "<br><br>";
 	/*Submit button*/
 	page += "<input type='submit' value='SUBMIT'></form><br>";
 	page += "<label>" + message + "</label>";
@@ -272,7 +262,7 @@ String WriteTag(String str)
 	}
 }
 
-String dump_byte_array_to_string(byte *buffer, byte bufferSize)
+static String dump_byte_array_to_string(byte *buffer, byte bufferSize)
 {
 	String temp = "";
 	for (byte i = 0; i < bufferSize; i++)

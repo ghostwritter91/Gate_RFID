@@ -17,7 +17,7 @@ void EEPROM_Init(void) {
 void EEPROM_Write(String str) {
     byte buffer[MEM_BLOCK_SIZE];
     uint8_t writing_byte_num = 0;
-    byte block_num = EEPROM_ReadActualTagBlockNumber() + 1;
+    byte block_num = EEPROM_ReadActualTagBlockNumber();
     byte tags_num = EEPROM_ReadActualNumberOfTags();
     if(MAX_NUM_TAGS > tags_num) {
         tags_num++;
@@ -26,7 +26,7 @@ void EEPROM_Write(String str) {
         block_num = FIRST_BLOCK_ADDR;
     }
     /* Save actual block number in memory */
-    EEPROM.write(LAST_ADDED_TAG_BLOCK_ADDR_IN_MEM, block_num);
+    EEPROM.write(LAST_ADDED_TAG_BLOCK_ADDR_IN_MEM, (block_num + 1));
     /* Save actual number of tags in memory */
     EEPROM.write(ACTUAL_NUMBER_OF_TAGS_ADDR_IN_MEM, tags_num);
     uint16 tag_addr = block_num * MEM_BLOCK_SIZE;
@@ -41,17 +41,21 @@ void EEPROM_Write(String str) {
 
 String EEPROM_DumpAllTags(void) {
     String str = "";
+    uint16_t num_of_bytes_to_dump = EEPROM_ReadActualNumberOfTags() * MEM_BLOCK_SIZE;
     /* Dump everything whitout last block which includes current block and numbers of tags*/
-    for(uint16_t i = 0; i < MEM_SIZE - MEM_BLOCK_SIZE; ++i) {
+    for(uint16_t i = 0; i < num_of_bytes_to_dump; ++i) {
         str += String( (char)EEPROM.read(i) );
-        str += " ";
+        /* Put EOL sign on every end of block */
+        if( (0 == (i % (MEM_BLOCK_SIZE - 1))) && (i != 0) ) {
+            str += "\n";
+        }
     }
     str += "Actual block: ";
     str += String( (char)  CONVERT_BYTE_TO_ASCII( EEPROM_ReadActualTagBlockNumber() ) );
-    str += " ";
+    str += "\n";
     str += "Actual number of tags: ";
     str += String( (char)  CONVERT_BYTE_TO_ASCII( EEPROM_ReadActualNumberOfTags() ) );
-    str += " ";
+    str += "\n";
     return str;
 }
 
