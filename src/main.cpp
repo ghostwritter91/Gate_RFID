@@ -7,6 +7,7 @@
 #include <WiFiClient.h>
 #include <DNSServer.h>
 #include "ESP8266WebServer.h"
+#include "my_eeprom.h"
 
 #define DEVICE_IP_1 192
 #define DEVICE_IP_2 168
@@ -25,6 +26,8 @@
 
 #define BYTES_TO_READ 18
 #define BYTES_TO_WRITE 16
+
+#define ATTEMPS_NUMBER 20
 
 String getPage();
 String ReadTag(String *str);
@@ -48,8 +51,14 @@ const String SITE_ADDR = "www.furtka.io";
 const String RADIO_CHECK_NAME = "CHOICE";
 const String RADIO_WRITE = "WRITE";
 const String RADIO_READ = "READ";
+const String RADIO_ADD_TAG = "ADD_TAG";
+const String RADIO_CLEAR_ALL = "CLEAR_ALL";
+const String RADIO_DUMP_ALL = "DUMP_ALL";
+
 const String WRITE_TXT = "write_txt";
-String sReadValue = "Null";
+const String ADD_TXT = "add_txt";
+
+String sReadValue = "";
 String message = "OK";
 
 DNSServer dnsServer;
@@ -57,24 +66,36 @@ ESP8266WebServer server(80);
 
 void handleSubmit()
 {
-	String RadioValue, WriteValue;
+	String RadioValue, WriteValue, AddValue;
 	RadioValue = server.arg(RADIO_CHECK_NAME);
+	message = "OK";
 	if (RADIO_WRITE == RadioValue)
 	{
 		WriteValue = server.arg(WRITE_TXT);
-		message = "OK";
-		for (byte i = 0; ((i < 20) && (message != "Done")); i++)
+		for (byte i = 0; ((i < ATTEMPS_NUMBER) && (message != "Done")); i++)
 		{
 			message = WriteTag(WriteValue);
 		}
 	}
 	else if (RADIO_READ == RadioValue)
 	{
-		message = "OK";
-		for (byte i = 0; ((i < 20) && (message != "Done")); i++)
+		for (byte i = 0; ((i < ATTEMPS_NUMBER) && (message != "Done")); i++)
 		{
 			message = ReadTag(&sReadValue);
 		}
+	}
+	else if (RADIO_ADD_TAG == RadioValue) 
+	{
+		AddValue = server.arg(ADD_TXT);
+		EEPROM_Write(AddValue);
+	}
+	else if (RADIO_CLEAR_ALL == RadioValue) 
+	{
+		EEPROM_ClearAll();
+	}
+	else if (RADIO_DUMP_ALL == RadioValue) 
+	{
+		message = EEPROM_DumpAllTags();
 	}
 	else
 	{
@@ -122,6 +143,7 @@ void setup()
 	while (!Serial)
 		; // Do nothing if no serial port is opened (added for Arduinos based on ATMEGA32U4)
 #endif
+	EEPROM_Init();
 	RFID_Init(new_mfrc522);
 
 	WiFi.mode(WIFI_AP_STA);
@@ -182,14 +204,23 @@ void dump_byte_array(byte *buffer, byte bufferSize)
 String getPage()
 {
 	String page = "<html lang=en-EN>";
-	page += "<style> body { background-color: #fffff; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; }</style>";
+	page += "<style> body { background-color: #fffff; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; } label {white-space: pre-wrap; } </style>";
 	page += "<form action='/' method='POST'>";
 	/*Read*/
-	page += "READ: <input type='text' name='read_txt' size='60' value='" + sReadValue + "'" + "readonly>";
+	page += "READ TAG: <input type='text' name='read_txt' size='60' value='" + sReadValue + "'" + "readonly>";
 	page += "<input type='radio' name='" + RADIO_CHECK_NAME + "'" + "value='" + RADIO_READ + "'>" + "<br>";
 	/*Write*/
-	page += "WRITE (max 16 chars): <input type='text' name='" + WRITE_TXT + "'> <input type='radio' name='" + RADIO_CHECK_NAME + "'" + "value='" + RADIO_WRITE + "'>" + "<br>";
-	page += "<input type='submit' value='CONFIRM'></form><br>";
+	page += "WRITE TAG (max 16 chars): <input type='text' name='" + WRITE_TXT + "'>";
+	page += "<input type='radio' name='" + RADIO_CHECK_NAME + "'" + "value='" + RADIO_WRITE + "'>" + "<br>";
+	/*Add tag*/
+	page += "ADD TAG (max 16 chars): <input type='text' name='" + ADD_TXT + "'>";	
+	page += "<input type='radio' name='" + RADIO_CHECK_NAME + "'" + "value='" + RADIO_ADD_TAG + "'>" + "<br>";
+	/*Clear all tags*/
+	page += "<input type='radio' name='" + RADIO_CHECK_NAME + "'" + "value='" + RADIO_CLEAR_ALL + "'>" + "CLEAR ALL" "<br>";
+	/*Dump all*/
+	page += "<input type='radio' name='" + RADIO_CHECK_NAME + "'" + "value='" + RADIO_DUMP_ALL + "'>" + "DUMP ALL" "<br>";
+	/*Submit button*/
+	page += "<input type='submit' value='SUBMIT'></form><br>";
 	page += "<label>" + message + "</label>";
 	page += "</body></html>";
 	return page;
