@@ -54,9 +54,12 @@ const String RADIO_READ = "READ";
 const String RADIO_ADD_TAG = "ADD_TAG";
 const String RADIO_CLEAR_ALL = "CLEAR_ALL";
 const String RADIO_DUMP_ALL = "DUMP_ALL";
+const String RADIO_IS_IN_TABLE = "IS_IN_TABLE";
+const String RADIO_OPEN_DOOR = "OPEN_DOOR";
 
 const String WRITE_TXT = "write_txt";
 const String ADD_TXT = "add_txt";
+const String IS_IN_TABLE_TXT = "is_in_table_txt";
 
 String sReadValue = "";
 String message = "OK";
@@ -66,15 +69,15 @@ ESP8266WebServer server(80);
 
 void handleSubmit()
 {
-	String RadioValue, WriteValue, AddValue;
+	String RadioValue, TxtValue;
 	RadioValue = server.arg(RADIO_CHECK_NAME);
 	message = "OK";
 	if (RADIO_WRITE == RadioValue)
 	{
-		WriteValue = server.arg(WRITE_TXT);
+		TxtValue = server.arg(WRITE_TXT);
 		for (byte i = 0; ((i < ATTEMPS_NUMBER) && (message != "Done")); i++)
 		{
-			message = WriteTag(WriteValue);
+			message = WriteTag(TxtValue);
 		}
 	}
 	else if (RADIO_READ == RadioValue)
@@ -86,8 +89,8 @@ void handleSubmit()
 	}
 	else if (RADIO_ADD_TAG == RadioValue) 
 	{
-		AddValue = server.arg(ADD_TXT);
-		EEPROM_Write(AddValue);
+		TxtValue = server.arg(ADD_TXT);
+		EEPROM_Write(TxtValue);
 	}
 	else if (RADIO_CLEAR_ALL == RadioValue) 
 	{
@@ -96,6 +99,31 @@ void handleSubmit()
 	else if (RADIO_DUMP_ALL == RadioValue) 
 	{
 		message = EEPROM_DumpAllTags();
+	}
+	else if (RADIO_IS_IN_TABLE == RadioValue) 
+	{
+		TxtValue = server.arg(IS_IN_TABLE_TXT);
+		if(EEPROM_CheckTag(TxtValue)) {
+			message = "Tag in table";
+		}
+		else {
+			message = "Unknow tag";
+		}
+	}
+	else if(RADIO_OPEN_DOOR == RadioValue) {
+		for (byte i = 0; ((i < ATTEMPS_NUMBER) && (message != "Done")); i++)
+		{
+			message = ReadTag(&sReadValue);
+		}
+		if(message == "Done") {
+			if(EEPROM_CheckTag(sReadValue)) {
+				message = "Door open";
+				delay(5000);
+			}
+			else {
+				message = "Unknow tag";
+			}
+		}
 	}
 	else
 	{
@@ -149,6 +177,10 @@ void setup()
 	WiFi.mode(WIFI_AP_STA);
 	WiFi.softAPConfig(IPAddress(DEVICE_IP_1, DEVICE_IP_2, DEVICE_IP_3, DEVICE_IP_4), IPAddress(GATE_IP_1, GATE_IP_2, GATE_IP_3, GATE_IP_4), IPAddress(MASK_IP_1, MASK_IP_2, MASK_IP_3, MASK_IP_4));
 	WiFi.softAP(ssid, password);
+#if (USE_LED_INDICATION == 1)
+	pinMode(LED_BUILTIN, OUTPUT); 
+	digitalWrite(LED_BUILTIN, HIGH);
+#endif
 
 #if (USE_DNS_SERVER == 1)
 	// modify TTL associated  with the domain name (in seconds)
@@ -186,6 +218,17 @@ void loop()
 	/* Handle normal operation*/
 	else
 	{
+		message = ReadTag(&sReadValue);
+		if(message == "Done") {
+			if(EEPROM_CheckTag(sReadValue)) {
+#if (USE_LED_INDICATION == 1)
+				digitalWrite(LED_BUILTIN, LOW);
+				delay(1000);
+				digitalWrite(LED_BUILTIN, HIGH);
+#endif
+			}
+		}
+		delay(100);
 	}
 }
 /* body { background-color: #fffff; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; } */
@@ -209,6 +252,12 @@ String getPage()
 	/*Dump all*/
 	page += "<label>DUMP ALL</label>";	
 	page += "<input type='radio' name='" + RADIO_CHECK_NAME + "'" + "value='" + RADIO_DUMP_ALL + "'>" + "<br><br>";
+	/*Is tag in table*/
+	page += "IS TAG IN TABLE (max 16 chars): <input type='text' name='" + IS_IN_TABLE_TXT + "'>";	
+	page += "<input type='radio' name='" + RADIO_CHECK_NAME + "'" + "value='" + RADIO_IS_IN_TABLE + "'>" + "<br><br>";
+	/*Open door*/
+	page += "<label>OPEN DOOR</label>";	
+	page += "<input type='radio' name='" + RADIO_CHECK_NAME + "'" + "value='" + RADIO_OPEN_DOOR + "'>" + "<br><br>";
 	/*Submit button*/
 	page += "<input type='submit' value='SUBMIT'></form><br>";
 	page += "<label>" + message + "</label>";
