@@ -173,6 +173,8 @@ void setup()
 #endif
 	EEPROM_Init();
 	RFID_Init(new_mfrc522);
+	/*Full Rx Gain 48 dB*/
+	new_mfrc522.PCD_SetAntennaGain(0b01110000);
 
 	WiFi.mode(WIFI_AP_STA);
 	WiFi.softAPConfig(IPAddress(DEVICE_IP_1, DEVICE_IP_2, DEVICE_IP_3, DEVICE_IP_4), IPAddress(GATE_IP_1, GATE_IP_2, GATE_IP_3, GATE_IP_4), IPAddress(MASK_IP_1, MASK_IP_2, MASK_IP_3, MASK_IP_4));
