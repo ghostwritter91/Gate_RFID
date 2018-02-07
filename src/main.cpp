@@ -66,6 +66,7 @@ String message = "OK";
 
 DNSServer dnsServer;
 ESP8266WebServer server(80);
+MFRC522 new_mfrc522(SS_PIN, RST_PIN);
 
 void handleSubmit()
 {
@@ -157,10 +158,6 @@ void handleNotFound()
 	server.send(404, "text/plain", message);
 }
 
-MFRC522 new_mfrc522(SS_PIN, RST_PIN);
-
-void dump_byte_array(byte *buffer, byte bufferSize);
-
 /**
   * Initialize.
   */
@@ -197,7 +194,6 @@ void setup()
 	// start DNS server for a specific domain name
 	dnsServer.start(DNS_PORT, SITE_ADDR, IPAddress(DEVICE_IP_1, DEVICE_IP_2, DEVICE_IP_3, DEVICE_IP_4));
 #endif
-
 	server.on("/", handleRoot);
 	server.onNotFound(handleNotFound);
 	server.begin();
