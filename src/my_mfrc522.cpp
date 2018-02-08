@@ -45,7 +45,7 @@ bool RFID_ReadTag(byte sector, byte trailerBlock, byte blockAddr, byte *buffer, 
      MFRC522::StatusCode status;
 	 status = (MFRC522::StatusCode) mfrc522.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A, trailerBlock, &key, &(mfrc522.uid));
 	 if (status != MFRC522::STATUS_OK) {
-		 Serial.print(F("PCD_Authenticate() failed: "));
+		 PRINT(F("PCD_Authenticate() failed: "));
 		 PRINT(mfrc522.GetStatusCodeName(status));
 		 return false;
      }
@@ -56,16 +56,15 @@ bool RFID_ReadTag(byte sector, byte trailerBlock, byte blockAddr, byte *buffer, 
 	 PRINT();
  
 	 // Read data from the block
-	 Serial.print(F("Reading data from block ")); Serial.print(blockAddr);
+	 PRINT(F("Reading data from block ")); PRINT(blockAddr);
 	 PRINT(F(" ..."));
 	 status = (MFRC522::StatusCode) mfrc522.MIFARE_Read(blockAddr, buffer, bufferSize);
 	 if (status != MFRC522::STATUS_OK) {
-		 Serial.print(F("MIFARE_Read() failed: "));
+		 PRINT(F("MIFARE_Read() failed: "));
          PRINT(mfrc522.GetStatusCodeName(status));
          return false;
      }
     return true;
-    PRINT();
 }
 
 
@@ -97,7 +96,7 @@ bool RFID_WriteTag(byte sector, byte trailerBlock, byte blockAddr, byte *buffer,
      MFRC522::StatusCode status;     
 	 status = (MFRC522::StatusCode) mfrc522.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_B, trailerBlock, &key, &(mfrc522.uid));
 	 if (status != MFRC522::STATUS_OK) {
-		 Serial.print(F("PCD_Authenticate() failed: "));
+		 PRINT(F("PCD_Authenticate() failed: "));
 		 PRINT(mfrc522.GetStatusCodeName(status));
 		 return false;
 	 }
@@ -105,19 +104,17 @@ bool RFID_WriteTag(byte sector, byte trailerBlock, byte blockAddr, byte *buffer,
     // Show the whole sector as it currently is
     PRINT(F("Current data in sector:"));
     mfrc522.PICC_DumpMifareClassicSectorToSerial(&(mfrc522.uid), &key, sector);
-    PRINT();
  
 	// Write data to the block
-	Serial.print(F("Writing data into block ")); Serial.print(blockAddr);
+	PRINT(F("Writing data into block ")); PRINT(blockAddr);
 	PRINT(F(" ..."));
 	status = (MFRC522::StatusCode) mfrc522.MIFARE_Write(blockAddr, buffer, bufferSize);
 	if (status != MFRC522::STATUS_OK) {
-		 Serial.print(F("MIFARE_Write() failed: "));
+		 PRINT(F("MIFARE_Write() failed: "));
          PRINT(mfrc522.GetStatusCodeName(status));
          return false;
     }
     return true;
-	PRINT();
 }
 
 void RFID_Stop() {

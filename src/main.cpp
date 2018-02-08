@@ -27,23 +27,27 @@
 #define BYTES_TO_READ 18
 #define BYTES_TO_WRITE 16
 
-#define ATTEMPS_NUMBER 20
+#define ATTEMPS_NUMBER 100
+#define GATE_OPEN_TIME_MS 3000
 
 String getPage();
 String ReadTag(String *str);
 String WriteTag(String str);
 static String dump_byte_array_to_string(byte *buffer, byte bufferSize);
+static void OpenGate(void);
 
-constexpr uint8_t RST_PIN = 0; // Configurable, see typical pin layout above
-constexpr uint8_t SS_PIN = 15; // Configurable, see typical pin layout above
+constexpr uint8_t RST_PIN = D3; 
+constexpr uint8_t SS_PIN = D8;
+constexpr uint8_t RELAY_PIN = D1;
+
 /* Reading & Writing Tags */
 const byte SECTOR = 1;
 const byte BLOCK_ADDR = 4;
 const byte TRAILER_BLOCK = 7;
 
 /* Set these to your desired credentials. */
-const char *ssid = "Furtka";
-const char *password = "unitrazodiak";
+const char ssid[] = "Furtka";
+const char password[] = "unitrazodiak";
 
 const byte DNS_PORT = 53;
 const String SITE_ADDR = "www.furtka.io";
@@ -79,6 +83,7 @@ void handleSubmit()
 		for (byte i = 0; ((i < ATTEMPS_NUMBER) && (message != "Done")); i++)
 		{
 			message = WriteTag(TxtValue);
+			delay(10);
 		}
 	}
 	else if (RADIO_READ == RadioValue)
@@ -86,6 +91,7 @@ void handleSubmit()
 		for (byte i = 0; ((i < ATTEMPS_NUMBER) && (message != "Done")); i++)
 		{
 			message = ReadTag(&sReadValue);
+			delay(10);
 		}
 	}
 	else if (RADIO_ADD_TAG == RadioValue) 
@@ -112,19 +118,7 @@ void handleSubmit()
 		}
 	}
 	else if(RADIO_OPEN_DOOR == RadioValue) {
-		for (byte i = 0; ((i < ATTEMPS_NUMBER) && (message != "Done")); i++)
-		{
-			message = ReadTag(&sReadValue);
-		}
-		if(message == "Done") {
-			if(EEPROM_CheckTag(sReadValue)) {
-				message = "Door open";
-				delay(5000);
-			}
-			else {
-				message = "Unknow tag";
-			}
-		}
+		OpenGate();
 	}
 	else
 	{
@@ -172,8 +166,7 @@ void setup()
 	RFID_Init(new_mfrc522);
 	/*Full Rx Gain 48 dB*/
 	new_mfrc522.PCD_SetAntennaGain(0b01110000);
-
-	WiFi.mode(WIFI_AP_STA);
+	WiFi.mode(WIFI_AP);
 	WiFi.softAPConfig(IPAddress(DEVICE_IP_1, DEVICE_IP_2, DEVICE_IP_3, DEVICE_IP_4), IPAddress(GATE_IP_1, GATE_IP_2, GATE_IP_3, GATE_IP_4), IPAddress(MASK_IP_1, MASK_IP_2, MASK_IP_3, MASK_IP_4));
 	WiFi.softAP(ssid, password);
 #if (USE_LED_INDICATION == 1)
@@ -184,7 +177,7 @@ void setup()
 #if (USE_DNS_SERVER == 1)
 	// modify TTL associated  with the domain name (in seconds)
 	// default is 60 seconds
-	dnsServer.setTTL(300);
+	dnsServer.setTTL(60);
 	// set which return code will be used for all other domains (e.g. sending
 	// ServerFailure instead of NonExistentDomain will reduce number of queries
 	// sent by clients)
@@ -212,6 +205,7 @@ void loop()
 		dnsServer.processNextRequest();
 #endif
 		server.handleClient();
+		delay(10);
 	}
 	/* Handle normal operation*/
 	else
@@ -219,14 +213,10 @@ void loop()
 		message = ReadTag(&sReadValue);
 		if(message == "Done") {
 			if(EEPROM_CheckTag(sReadValue)) {
-#if (USE_LED_INDICATION == 1)
-				digitalWrite(LED_BUILTIN, LOW);
-				delay(1000);
-				digitalWrite(LED_BUILTIN, HIGH);
-#endif
+				OpenGate();
 			}
 		}
-		delay(100);
+		delay(10);
 	}
 }
 /* body { background-color: #fffff; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; } */
@@ -307,6 +297,19 @@ String WriteTag(String str)
 		RFID_Stop();
 		return "No Tags";
 	}
+}
+
+static void OpenGate(void) 
+{
+	digitalWrite(RELAY_PIN, HIGH);
+#if (USE_LED_INDICATION == 1)
+	digitalWrite(LED_BUILTIN, LOW);
+#endif
+	delay(GATE_OPEN_TIME_MS);
+#if (USE_LED_INDICATION == 1)
+	digitalWrite(LED_BUILTIN, HIGH);
+#endif
+	digitalWrite(RELAY_PIN, LOW);
 }
 
 static String dump_byte_array_to_string(byte *buffer, byte bufferSize)
