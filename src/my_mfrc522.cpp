@@ -2,9 +2,67 @@
 #include <MFRC522.h>
 #include "my_config.h"
 
-MFRC522::MIFARE_Key key;
+#define BYTES_TO_READ 18
+#define BYTES_TO_WRITE 16
 
-MFRC522 mfrc522;
+/* Reading & Writing Tags */
+static const byte SECTOR = 1;
+static const byte BLOCK_ADDR = 4;
+static const byte TRAILER_BLOCK = 7;
+
+static MFRC522::MIFARE_Key key;
+static MFRC522 mfrc522;
+
+static bool RFID_ReadTag(byte sector, byte trailerBlock, byte blockAddr, byte *buffer, byte *bufferSize);
+static bool RFID_WriteTag(byte sector, byte trailerBlock, byte blockAddr, byte *buffer, byte bufferSize);
+static void RFID_Stop();
+static String dump_byte_array_to_string(byte *buffer, byte bufferSize);
+
+String ReadTag(String *str)
+{
+	byte size = 18;
+	byte buffer[BYTES_TO_READ];
+	memset(buffer, '\0', size);
+	*str = "";
+
+	// Read data from TAG
+	if (RFID_ReadTag(SECTOR, TRAILER_BLOCK, BLOCK_ADDR, buffer, &size))
+	{
+		*str = dump_byte_array_to_string(buffer, size);
+		RFID_Stop();
+		return "Done";
+	}
+	else
+	{
+		RFID_Stop();
+		return "No Tags";
+	}
+}
+
+String WriteTag(String str)
+{
+	byte size = 16;
+	byte buffer[BYTES_TO_WRITE];
+	memset(buffer, '\0', size);
+
+	if (str.length() > size)
+	{
+		return "Too long";
+	}
+	str.getBytes(buffer, str.length() + 1, 0);
+
+	// Write data to TAG
+	if (RFID_WriteTag(SECTOR, TRAILER_BLOCK, BLOCK_ADDR, buffer, size))
+	{
+		RFID_Stop();
+		return "Done";
+	}
+	else
+	{
+		RFID_Stop();
+		return "No Tags";
+	}
+}
 
 void RFID_Init(MFRC522 new_mfrc522) {
     SPI.begin();                // Init SPI bus
@@ -18,7 +76,7 @@ void RFID_Init(MFRC522 new_mfrc522) {
 }
 
 /* sector to read, trailerBlock is used to authentication (often is last in reading sector)*/
-bool RFID_ReadTag(byte sector, byte trailerBlock, byte blockAddr, byte *buffer, byte *bufferSize) {
+static bool RFID_ReadTag(byte sector, byte trailerBlock, byte blockAddr, byte *buffer, byte *bufferSize) {
      // Look for new cards
 	 if ( ! mfrc522.PICC_IsNewCardPresent()) {
         return false;
@@ -69,7 +127,7 @@ bool RFID_ReadTag(byte sector, byte trailerBlock, byte blockAddr, byte *buffer, 
 
 
 /* sector to read, trailerBlock is used to authentication (often is last in reading sector)*/
-bool RFID_WriteTag(byte sector, byte trailerBlock, byte blockAddr, byte *buffer, byte bufferSize) {
+static bool RFID_WriteTag(byte sector, byte trailerBlock, byte blockAddr, byte *buffer, byte bufferSize) {
     // Look for new cards
     if ( ! mfrc522.PICC_IsNewCardPresent()) {
         return false;
@@ -117,9 +175,23 @@ bool RFID_WriteTag(byte sector, byte trailerBlock, byte blockAddr, byte *buffer,
     return true;
 }
 
-void RFID_Stop() {
+static void RFID_Stop() {
     // Halt PICC
 	 mfrc522.PICC_HaltA();
 	 // Stop encryption on PCD
 	 mfrc522.PCD_StopCrypto1();
+}
+
+static String dump_byte_array_to_string(byte *buffer, byte bufferSize)
+{
+	String temp = "";
+	for (byte i = 0; i < bufferSize; i++)
+	{
+		temp += String((char)buffer[i]);
+		if ('\0' == (char)buffer[i])
+		{
+			break;
+		}
+	}
+	return temp;
 }

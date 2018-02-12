@@ -5,6 +5,8 @@
 #define USE_DNS_SERVER 1
 #define USE_LED_INDICATION 1
 
+#define ATTEMPS_RW_NUMBER_WEBSITE 100
+
 #if (USE_DEBUG_PRINT == 1)
     #define PRINT(txt) Serial.println(txt)
 #else 
