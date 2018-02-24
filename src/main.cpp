@@ -13,6 +13,7 @@
 
 static String sReadValue = "";
 static String message = "OK";
+static uint8_t OpenTime_S = 3;
 
 MFRC522 new_mfrc522(SS_PIN, RST_PIN);
 
@@ -37,6 +38,8 @@ void setup()
 	pinMode(LED_BUILTIN, OUTPUT); 
 	digitalWrite(LED_BUILTIN, HIGH);
 #endif	
+
+	OpenTime_S = EEPROM_GetOpenTime();
 
 	AP_Init();
 }
@@ -70,9 +73,13 @@ void OpenGate(void) {
 #if (USE_LED_INDICATION == 1)
 	digitalWrite(LED_BUILTIN, LOW);
 #endif
-	delay(GATE_OPEN_TIME_MS);
+	delay(OpenTime_S * 1000);
 #if (USE_LED_INDICATION == 1)
 	digitalWrite(LED_BUILTIN, HIGH);
 #endif
 	digitalWrite(RELAY_PIN, LOW);
+}
+
+void SetOpenTime(uint8_t time) {
+	OpenTime_S = time;
 }

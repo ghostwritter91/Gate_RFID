@@ -24,6 +24,4 @@ void AP_Init();
 bool AP_IsClientConnected();
 void AP_HandleClient();
 
-
-
 #endif

@@ -17,6 +17,8 @@ static const String RADIO_CHECK_NAME = "CHOICE";
 static const String RADIO_WRITE = "WRITE";
 static const String RADIO_READ = "READ";
 static const String RADIO_ADD_TAG = "ADD_TAG";
+static const String RADIO_CHANGE_TIME = "CHANGE_TIME";
+static const String RADIO_GET_TIME = "GET_TIME";
 static const String RADIO_CLEAR_ALL = "CLEAR_ALL";
 static const String RADIO_DUMP_ALL = "DUMP_ALL";
 static const String RADIO_IS_IN_TABLE = "IS_IN_TABLE";
@@ -24,9 +26,11 @@ static const String RADIO_OPEN_DOOR = "OPEN_DOOR";
 
 static const String WRITE_TXT = "write_txt";
 static const String ADD_TXT = "add_txt";
+static const String OPEN_TIME_S = "3";
 static const String IS_IN_TABLE_TXT = "is_in_table_txt";
 
 static String sReadTagValue = "";
+static String sTimeOpenS = "";
 static String message = "OK";
 
 static const byte DNS_PORT = 53;
@@ -88,7 +92,8 @@ void AP_HandleClient() {
 
 static void handleSubmit()
 {
-	String RadioValue, TxtValue;
+	String RadioValue, TxtValue, OpenTime;
+	uint8_t u8OpenTime = 0;
 	RadioValue = server.arg(RADIO_CHECK_NAME);
 	message = "OK";
 	if (RADIO_WRITE == RadioValue)
@@ -112,6 +117,18 @@ static void handleSubmit()
 	{
 		TxtValue = server.arg(ADD_TXT);
 		EEPROM_Write(TxtValue);
+	}
+	else if (RADIO_CHANGE_TIME == RadioValue) 
+	{
+		OpenTime = server.arg(OPEN_TIME_S);
+		u8OpenTime = (uint8_t) OpenTime.toInt();
+		EEPROM_SaveOpenTime(u8OpenTime);
+		SetOpenTime(u8OpenTime);
+	}
+	else if (RADIO_GET_TIME == RadioValue) 
+	{
+		u8OpenTime = EEPROM_GetOpenTime();
+		sTimeOpenS = String(u8OpenTime);
 	}
 	else if (RADIO_CLEAR_ALL == RadioValue) 
 	{
@@ -179,6 +196,12 @@ static String getPage() {
 	/*Add tag*/
 	page += "ADD TAG (max 16 chars): <input type='text' name='" + ADD_TXT + "'>";	
 	page += "<input type='radio' name='" + RADIO_CHECK_NAME + "'" + "value='" + RADIO_ADD_TAG + "'>" + "<br><br>";
+	/*Change open time*/
+	page += "CHANGE OPEN TIME (1-255) [s]: <input type='number' min='1' max='255' step='1' name='" + OPEN_TIME_S + "'>";	
+	page += "<input type='radio' name='" + RADIO_CHECK_NAME + "'" + "value='" + RADIO_CHANGE_TIME + "'>" + "<br><br>";
+	/*Get open time*/
+	page += "GET OPEN TIME [s]: <input type='text' name='read_txt' size='15' value='" + sTimeOpenS + "'" + "readonly>";	
+	page += "<input type='radio' name='" + RADIO_CHECK_NAME + "'" + "value='" + RADIO_GET_TIME + "'>" + "<br><br>";
 	/*Clear all tags*/
 	page += "<label>CLEAR ALL</label>";	
 	page += "<input type='radio' name='" + RADIO_CHECK_NAME + "'" + "value='" + RADIO_CLEAR_ALL + "'>" + "<br><br>";

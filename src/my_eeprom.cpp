@@ -85,6 +85,15 @@ void EEPROM_ClearAll(void) {
     EEPROM.commit();
 }
 
+void EEPROM_SaveOpenTime(uint8_t time) {
+    EEPROM.write(ACTUAL_OPEN_TIME_ADDR_IN_MEM, time);
+    EEPROM.commit();
+}
+
+uint8_t EEPROM_GetOpenTime(void) {
+    return EEPROM.read(ACTUAL_OPEN_TIME_ADDR_IN_MEM);
+}
+
 static bool EEPROM_CompareBuffers(byte buff1[], byte buff2[]) {
     uint8_t cnt = 0;
     for(uint8_t i = 0; i < MEM_BLOCK_SIZE; ++i) {

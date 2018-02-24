@@ -8,5 +8,6 @@ constexpr uint8_t SS_PIN = D8;
 constexpr uint8_t RELAY_PIN = D1;
 
 void OpenGate(void);
+void SetOpenTime(uint8_t time);
 
 #endif
