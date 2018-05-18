@@ -20,8 +20,10 @@
 #define AP_PASS "unitrazodiak"
 #define AP_SITE_ADDR "www.furtka.io"
 
-void AP_Init();
+void AP_HandleOnOffRequest();
 bool AP_IsClientConnected();
 void AP_HandleClient();
+void AP_Off();
+void AP_On();
 
 #endif
